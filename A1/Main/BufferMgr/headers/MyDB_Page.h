@@ -48,7 +48,8 @@ public:
     long getPos ();
     
     // setters
-    void setUnpinned ();
+    // tells the buffer manager that we are done with the page
+	void setUnpinned ();
 
 private:
 
@@ -64,6 +65,9 @@ private:
 	// the raw bytes in this page
 	void *bytes;
 
+	// the number of references to this page
+	int refCount;
+
 	// is this page dirty?
 	bool isDirty;
 
@@ -71,8 +75,8 @@ private:
 	bool isPinned;
 
 	// the number of references to this page
-	int refCount;
-    
+	// int refCount; // Duplicate? Removed.
+
     // the size of the page
     size_t pageSize;
 };

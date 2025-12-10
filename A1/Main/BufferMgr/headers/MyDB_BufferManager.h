@@ -9,8 +9,16 @@
 #include <list>
 #include <vector>
 #include <set>
+#include <unordered_map>
 
 using namespace std;
+
+// Custom Hash for Table+Pos Key
+struct PageMapHash {
+    size_t operator()(const pair<MyDB_TablePtr, long>& k) const {
+        return hash<string>()(k.first->getName()) ^ hash<long>()(k.second);
+    }
+};
 
 class MyDB_BufferManager {
 
@@ -47,6 +55,12 @@ public:
     
     // Method to re-load an evicted page (called by MyDB_Page::getBytes)
     void repin(MyDB_Page* page);
+    
+    // Method to notify LRU used (called by unpin or getBytes/Writes)
+    void updateLRU(MyDB_PagePtr p);
+    
+    // Method to remove from LRU (called by getPinned)
+    void removeFromLRU(MyDB_Page* p);
 
 	// creates an LRU buffer manager... params are as follows:
 	// 1) the size of each page is pageSize 
@@ -60,7 +74,7 @@ public:
 	~MyDB_BufferManager ();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS 
-
+    
 private:
 
 	// YOUR STUFF HERE
@@ -75,33 +89,26 @@ private:
     long lastTempId;
     
     // The actual memory buffer
-    // We treat it as an array of page objects or just raw bytes?
-    // Better to have vector<char> or char* buffer;
-    char *buffer; // The big chunk
+    char *buffer; 
     
     // Tracking Free RAM
-    // A list of free buffer slot indices (0 to numPages-1)
     vector<long> freeSlots;
     
     // Tracking Anonymous File Slots
-    // Just a counter? Recycled slots?
-    // "disk slot associated with the anonymous page should be recycled"
     set<long> freeTempSlots;
     
-    // Page Lookup
-    // Key: {TablePtr, PageID} -> Value: Page Object
-    map<pair<MyDB_TablePtr, long>, MyDB_PagePtr> allPages;
+    // Page Lookup - O(1)
+    unordered_map<pair<MyDB_TablePtr, long>, MyDB_PagePtr, PageMapHash> allPages;
     
     // LRU List
-    // We need to move accessed pages to the back (MRU).
-    // Evict from front (LRU).
+    // Contains ONLY unpinned, evictable pages.
     list<MyDB_PagePtr> lruList;
     
-    // Helper to common logic (get slot, load data, etc)
-    // MyDB_PageHandle _getPage(MyDB_TablePtr table, long i, bool pinned);
+    // Map of iterators for O(1) access to LRU list
+    // Key: Raw page pointer -> Value: Iterator in lruList
+    unordered_map<MyDB_Page*, list<MyDB_PagePtr>::iterator> pageLruIterators;
     
-    // Helper to find a victim and evict
-    // returns pointer to the buffer slot (char*) that was freed up
+    // Helper to find a victim and evict O(1)
     char* evict ();
     
     // Helper to get a buffer slot (from free list or by eviction)

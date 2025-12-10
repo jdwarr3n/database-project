@@ -96,3 +96,5 @@ MyDB_TablePtr MyDB_Page :: getTable () {
 long MyDB_Page :: getPos () {
     return pos;
 }
+
+
