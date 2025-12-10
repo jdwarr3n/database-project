@@ -1,0 +1,24 @@
+# C++ objects and libs
+*.o
+*.obj
+*.lib
+*.a
+*.dll
+
+# Executables
+*.exe
+bin/
+
+# SCons
+.sconsign.dblite
+
+# Testing / Temporary files
+tempFile
+tempDSFSD
+foobar
+foobarbaz
+*.tmp
+tempTable*
+
+# Archives
+*.zip
