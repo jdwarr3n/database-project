@@ -38,7 +38,19 @@ ans="1"
 
 if ans=="1":
 	print("\nOK, building buffer unit tests.")
-	common_env.Program ('bin/bufferUnitTest', ['../Main/BufferTest/source/BufferQUnit.cc', catalogSrc, bufferSrc])
+	
+	# Scan for all test files
+	testDir = '../Main/BufferTest/source'
+	testFiles = [f for f in listdir(testDir) if isfile(join(testDir, f)) and f.endswith('.cc')]
+	
+	for f in testFiles:
+		print("Building test: " + f)
+		# Target name is filename without extension "bin/BufferQUnit" etc.
+		targetName = 'bin/' + f[:-3] 
+		# If it was BufferUnitTest_full.cc, target is bin/BufferUnitTest_full
+		
+		# Build it!
+		common_env.Program (targetName, [join(testDir, f), catalogSrc, bufferSrc])
 
 if ans=="2":
 	print("\nOK, building buffer unit tests using clang++.")
