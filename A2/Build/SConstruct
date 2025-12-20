@@ -1,0 +1,58 @@
+
+from os import listdir, path
+from os.path import isfile, join, abspath
+
+common_env = Environment()
+common_env.Append(CXXFLAGS = '-std=c++11 -Wall -g -O0')
+
+# get the source files for the catalog
+srcDir = '../Main/Catalog/source'
+catalogSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the buffer manager
+srcDir = '../Main/BufferMgr/source'
+bufferSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the record manager
+srcDir = '../Main/Record/source'
+recordSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the record manager
+srcDir = '../Main/DatabaseTable/source'
+tableSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the headers paths
+header_paths = Split("""
+	../Main/Catalog/headers
+	../Main/BufferMgr/headers
+	../Main/Qunit/headers
+	../Main/Record/headers
+	../Main/DatabaseTable/headers
+""")
+
+# adds header folders 
+common_env.Append(CPPPATH = header_paths)
+
+# Build Buffer Unit Tests
+print("\\nScanning Buffer Unit Tests...")
+testDir = '../Main/BufferTest/source'
+if path.exists(testDir):
+	testFiles = [f for f in listdir(testDir) if isfile(join(testDir, f)) and f.endswith('.cc')]
+	for f in testFiles:
+		print("Building test: " + f)
+		targetName = 'bin/' + f[:-3] 
+		common_env.Program(targetName, [join(testDir, f), catalogSrc, recordSrc, bufferSrc, tableSrc])
+else:
+    print(f"Warning: {testDir} does not exist.")
+
+# Build Record Unit Tests
+print("\\nScanning Record Unit Tests...")
+testDir = '../Main/RecordTest/source'
+if path.exists(testDir):
+	testFiles = [f for f in listdir(testDir) if isfile(join(testDir, f)) and f.endswith('.cc')]
+	for f in testFiles:
+		print("Building test: " + f)
+		targetName = 'bin/' + f[:-3]
+		common_env.Program(targetName, [join(testDir, f), tableSrc, recordSrc, catalogSrc, bufferSrc])
+else:
+     print(f"Warning: {testDir} does not exist.")
