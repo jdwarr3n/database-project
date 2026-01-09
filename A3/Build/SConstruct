@@ -1,0 +1,67 @@
+
+from os import listdir, makedirs
+from os.path import isfile, join, abspath, splitext, exists
+import sys
+
+common_env = Environment()
+common_env.Append(CXXFLAGS = '-std=c++11 -Wall -g -O0')
+common_env.Append(YACCFLAGS='-d')
+common_env.Append(CFLAGS='-std=c11')
+
+# get the source files for the catalog
+srcDir = '../Main/Catalog/source'
+catalogSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the buffer manager
+srcDir = '../Main/BufferMgr/source'
+bufferSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the record manager
+srcDir = '../Main/Record/source'
+recordSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the source files for the database table
+srcDir = '../Main/DatabaseTable/source'
+tableSrc = [abspath(join(srcDir, f)) for f in listdir(srcDir) if isfile(join(srcDir, f)) and f[-3:] == '.cc']
+
+# get the headers paths
+header_paths = Split("""
+	../Main/Catalog/headers
+	../Main/BufferMgr/headers
+	../Main/Qunit/headers
+	../Main/Record/headers
+	../Main/DatabaseTable/headers
+""")
+
+# adds header folders 
+common_env.Append(CPPPATH = header_paths)
+
+# Ensure bin directory exists
+if not exists('bin'):
+    makedirs('bin')
+
+# Scan for QUnit files
+qunitDir = '../Main/Qunit/source'
+qunitFiles = []
+if exists(qunitDir):
+    qunitFiles = [f for f in listdir(qunitDir) if isfile(join(qunitDir, f)) and f.endswith('.cc')]
+
+if not qunitFiles:
+    print(f"No QUnit source files found in {qunitDir}")
+    Exit(1)
+
+print(f"\nFound {len(qunitFiles)} QUnit test file(s). Building and running all...")
+
+for f in qunitFiles:
+    baseName = splitext(f)[0]
+    targetBin = join('bin', baseName)
+    sourcePath = join(qunitDir, f)
+
+    print(f"  - Configuring: {f} -> {targetBin}")
+    
+    # Build the program linking all modules
+    prog = common_env.Program(targetBin, [sourcePath] + catalogSrc + bufferSrc + recordSrc + tableSrc)
+
+    # Automatically run the test after build
+    common_env.AddPostAction(prog, targetBin)
+
